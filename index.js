@@ -36,12 +36,33 @@ async function addEvent(event) {
   }
 }
 
+/** Asks the API to delete the given artist */
+async function deleteEvent(event) {
+  try {
+    const response = await fetch(API_URL + "/" + event.id, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(
+        "Unable to delete artist due to Http error: " + response.status
+      );
+    }
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+
 // === Render ===
 
 /** Renders events from state */
 function renderEvents() {
   const ul = document.getElementById("events");
-  // ul.innerHTML = ""; // Clear existing list
+  ul.innerHTML = ""; // Clear existing list
 
   if (!state.events.length) {
     ul.innerHTML = "<li>No events.</li>";
@@ -62,12 +83,21 @@ function renderEvents() {
 
     const location = document.createElement("p");
     location.textContent = event.location;
+
+    //Button to Delete the Artist
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.style.display = "block";
+    deleteButton.addEventListener("click", async () => {
+      await deleteEvent(event);
+    });
   
     // Append the elements to the card
     card.appendChild(heading);
     card.appendChild(description);
     card.appendChild(date);
     card.appendChild(location);
+    card.appendChild(deleteButton);
   
     return card;
   });
