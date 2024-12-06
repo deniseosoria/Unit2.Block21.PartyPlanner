@@ -8,20 +8,27 @@
     <script defer src="index.js"></script>
   </head>
   <body>
-    <h1><a href="#">Event Planner</a></h1>
-    <main>
-      <article id="events">
-        <h2>Upcoming Events</h2>
-        <section id="eventList"></section>
-      </article>
-      <article id="event">
-        <h2>Event Details</h2>
-        <article id="eventDetails"></article>
-        <section id="guests">
-          <h3>Guests</h3>
-          <ul id="guestList"></ul>
-        </section>
-      </article>
-    </main>
+    <h1>Events</h1>
+    <form id="addEvent">
+      <label>
+        Name
+        <input type="text" name="eventName" required />
+      </label>
+      <label>
+        Description
+        <input type="text" name="description" required />
+      </label>
+      <label>
+        Date
+        <input type="datetime-local" name="date" required />
+      </label>
+      <label>
+        Location
+        <input type="text" name="location" required />
+      </label>
+   
+      <button id="add-event">Add Event</button>
+    </form>
+    <ul id="events"></ul>
   </body>
 </html>

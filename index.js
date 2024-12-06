@@ -1,77 +1,16 @@
-const COHORT = "REPLACE_ME!";
-const API = "https://fsa-crud-2aa9294fe819.herokuapp.com/api/" + COHORT;
+const COHORT = "2409-GHP-ET-WEB-PT";
+const API_URL = `https://fsa-crud-2aa9294fe819.herokuapp.com/api/${COHORT}/events`;
+
+// === State ===
 
 const state = {
   events: [],
-  event: null,
-  guests: [],
-  rsvps: [],
 };
 
-// The $ prefix is used here to denote variables that reference DOM elements
-const $eventList = document.querySelector("#eventList");
-const $eventDetails = document.querySelector("#eventDetails");
-const $guests = document.querySelector("#guests");
-const $guestList = document.querySelector("#guestList");
-
-window.addEventListener("hashchange", selectEvent);
-
-/**
- * Update state with data from the API and the DOM to reflect current state
- */
-async function render() {
-  await getEvents();
-  await getGuests();
-  await getRsvps();
-
-  renderEvents();
-  selectEvent();
-}
-
-render();
-
-/**
- * Show details about the currently selected event
- */
-function selectEvent() {
-  getEventFromHash();
-  renderEventDetails();
-}
-
-/**
- * Find the event that matches the current hash to update state
- */
-function getEventFromHash() {
-  // We need to slice the # off
-  const id = window.location.hash.slice(1);
-  state.event = state.events.find((event) => event.id === +id);
-}
-
-/**
- * GET the list of guests from the API to update state
- */
-async function getGuests() {
-  // TODO
-}
-
-/**
- * Render the list of guests for the currently selected event
- */
-function renderGuests() {
-  $guests.hidden = false;
-
-  // TODO: Render the list of guests for the currently selected event
-  $guestList.innerHTML = "<li>No guests yet!</li>";
-}
-
-// === No need to edit anything below this line! ===
-
-/**
- * GET the list of events from the API to update state
- */
+/** Updates state with events from API */
 async function getEvents() {
   try {
-    const response = await fetch(API + "/events");
+    const response = await fetch(API_URL);
     const json = await response.json();
     state.events = json.data;
   } catch (error) {
@@ -79,62 +18,92 @@ async function getEvents() {
   }
 }
 
-/**
- * GET the list of rsvps from the API to update state
- */
-async function getRsvps() {
+/** Asks the API to create a new event based on the given `artist` */
+async function addEvent(event) {
   try {
-    const response = await fetch(API + "/rsvps");
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(event),
+    });
     const json = await response.json();
-    state.rsvps = json.data;
+
+    if (json.error) {
+      throw new Error(json.error.message);
+    }
   } catch (error) {
     console.error(error);
   }
 }
 
-/**
- * Update `$eventList` to reflect the current state
- */
+// === Render ===
+
+/** Renders events from state */
 function renderEvents() {
-  const events = state.events.map(renderEvent);
-  $eventList.replaceChildren(...events);
-}
+  const ul = document.getElementById("events");
+  // ul.innerHTML = ""; // Clear existing list
 
-/**
- * @param {Event} event the event to render
- * @returns {HTMLElement} an article element representing the event
- */
-function renderEvent(event) {
-  const article = document.createElement("article");
-  const date = event.date.slice(0, 10);
-
-  article.innerHTML = `
-    <h3><a href="#${event.id}">${event.name} #${event.id}</a></h3>
-    <time datetime="${date}">${date}</time>
-    <address>${event.location}</address>
-  `;
-
-  return article;
-}
-
-/**
- * Render details about the currently selected event
- */
-function renderEventDetails() {
-  if (!state.event) {
-    $eventDetails.innerHTML = "<p>Select a event to see more.</p>";
-    $guests.hidden = true;
+  if (!state.events.length) {
+    ul.innerHTML = "<li>No events.</li>";
     return;
   }
+  
+  const eventCards = state.events.map((event) => { 
+    const card = document.createElement("li");
+  
+    const heading = document.createElement("h2");
+    heading.textContent = event.name;
+  
+    const description = document.createElement("p");
+    description.textContent = event.description;
 
-  const date = state.event.date.slice(0, 10);
+    const date = document.createElement("p");
+    date.textContent = event.date;
 
-  $eventDetails.innerHTML = `
-    <h2>${state.event.name} #${state.event.id}</h2>
-    <time datetime="${date}">${date}</time>
-    <address>${state.event.location}</address>
-    <p>${state.event.description}</p>
-  `;
+    const location = document.createElement("p");
+    location.textContent = event.location;
+  
+    // Append the elements to the card
+    card.appendChild(heading);
+    card.appendChild(description);
+    card.appendChild(date);
+    card.appendChild(location);
+  
+    return card;
+  });
 
-  renderGuests();
+  // Append all event cards to the `ul` element
+  eventCards.forEach((card) => ul.appendChild(card));
 }
+
+/** Syncs state with the API and rerender */
+async function render() {
+  await getEvents();
+  renderEvents();
+}
+
+// === Script ===
+
+// TODO: Add event with form data when the form is submitted
+
+const form = document.querySelector("form");
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const rawDate = form.date.value; // Gets the datetime-local string
+  const isoDate = new Date(rawDate).toISOString(); // Converts to ISO-8601 format
+
+
+  const  eventObject = {
+    name: form.eventName.value,
+    description: form.description.value,
+    date: isoDate,
+    location: form.location.value,
+  };
+
+  await addEvent(eventObject);
+  form.reset(); // Reset form
+  render(); // Refresh event list
+});
+
+// Initial render
+render();
